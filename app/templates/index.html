@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web Scraping Platform</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
@@ -26,8 +26,8 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <header class="hero">
+    <!-- Main Content -->
+    <section class="hero">
         <div class="hero-content">
             <h1>Web Scraping & Automation Platform</h1>
             <p>Extract data from any website automatically. Build your scrapers with no code.</p>
@@ -36,10 +36,10 @@
                 <button class="btn btn-outline">Watch Demo</button>
             </div>
         </div>
-    </header>
+    </section>
 
-    <!-- Features Grid -->
-    <section class="features">
+    <!-- Dashboard -->
+    <section class="dashboard">
         <h2>Platform Features</h2>
         <div class="features-grid">
             <div class="feature-card">
@@ -60,21 +60,6 @@
         </div>
     </section>
 
-    <!-- Dashboard Preview -->
-    <section class="dashboard-preview">
-        <h2>Powerful Dashboard</h2>
-        <div class="dashboard-container">
-            <div class="dashboard-tabs">
-                <button class="tab active">Actors</button>
-                <button class="tab">Runs</button>
-                <button class="tab">Storage</button>
-            </div>
-            <div class="dashboard-content">
-                <!-- Dashboard content will be loaded dynamically -->
-            </div>
-        </div>
-    </section>
-
-    <script src="script.js"></script>
+    <script src="{{ url_for('static', path='/js/script.js') }}"></script>
 </body>
 </html> 
