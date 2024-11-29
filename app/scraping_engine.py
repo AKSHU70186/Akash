@@ -6,6 +6,8 @@ from datetime import datetime
 import re
 from urllib.parse import urljoin, urlparse
 import asyncio
+from dateutil import parser
+import pytz
 
 class ScrapingEngine:
     def __init__(self):
@@ -14,6 +16,9 @@ class ScrapingEngine:
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.5',
         }
+
+        # Set timezone to IST
+        self.timezone = pytz.timezone('Asia/Kolkata')
 
         self.site_configs = {
             'indianexpress.com': {
@@ -25,67 +30,51 @@ class ScrapingEngine:
                     'title': 'h2.title a, h3 a',
                     'link': 'h2.title a, h3 a',
                     'description': ['p.preview', 'div.preview', 'p:not([class])', 'div.synopsis'],
-                    'date': 'time, span.date',
+                    'date': ['time', 'span.date', 'div.date-time', 'span.datetime'],
                     'summary': ['p.preview', 'div.preview', 'p:not([class])', 'div.synopsis']
-                }
+                },
+                'date_formats': [
+                    '%B %d, %Y %I:%M %p',
+                    '%B %d, %Y',
+                    'Updated: %B %d, %Y %I:%M %p',
+                    'Published: %B %d, %Y %I:%M %p'
+                ]
             }
         }
 
-    async def fetch_article_content(self, url: str) -> Optional[str]:
-        """Fetch and extract full article content"""
+    def parse_date(self, date_str: str, formats: List[str]) -> Optional[str]:
+        """Parse date string to formatted datetime"""
+        if not date_str:
+            return None
+
+        # Clean the date string
+        date_str = re.sub(r'\s+', ' ', date_str.strip())
+        
+        # Try parsing with dateutil first
         try:
-            html = await self.fetch_with_retry(url)
-            if html:
-                soup = BeautifulSoup(html, 'html.parser')
-                # Find article content
-                content = soup.select_one('div.article-content, div.full-details')
-                if content:
-                    # Extract first few paragraphs
-                    paragraphs = content.select('p')
-                    summary = ' '.join([p.get_text().strip() for p in paragraphs[:2]])
-                    return self.clean_text(summary)
-            return None
-        except Exception as e:
-            logging.error(f"Error fetching article content: {str(e)}")
-            return None
-
-    async def fetch_with_retry(self, url: str, max_retries: int = 3) -> Optional[str]:
-        """Fetch URL content with retry mechanism"""
-        for attempt in range(max_retries):
-            try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(url, headers=self.headers, timeout=30) as response:
-                        if response.status == 200:
-                            return await response.text()
-            except Exception as e:
-                logging.error(f"Attempt {attempt + 1} failed for {url}: {str(e)}")
-                if attempt == max_retries - 1:
-                    raise
-                await asyncio.sleep(1)
-        return None
-
-    def get_site_config(self, url: str) -> Optional[Dict]:
-        """Get configuration for given URL"""
-        domain = urlparse(url).netloc.lower()
-        return next((config for site, config in self.site_configs.items() if site in domain), None)
-
-    def clean_text(self, text: str) -> str:
-        """Clean and normalize text content"""
-        if not text:
-            return ""
-        # Remove extra whitespace and normalize
-        text = re.sub(r'\s+', ' ', text.strip())
-        # Remove special characters
-        text = re.sub(r'[\n\r\t]', '', text)
-        return text
-
-    def extract_text_from_selectors(self, article: BeautifulSoup, selectors: List[str]) -> Optional[str]:
-        """Try multiple selectors to extract text"""
-        for selector in selectors:
-            element = article.select_one(selector)
-            if element:
-                return self.clean_text(element.get_text())
-        return None
+            # Parse the date
+            parsed_date = parser.parse(date_str, fuzzy=True)
+            
+            # Set timezone to IST if naive
+            if parsed_date.tzinfo is None:
+                parsed_date = self.timezone.localize(parsed_date)
+            
+            # Format the date
+            return parsed_date.strftime('%Y-%m-%d %I:%M %p IST')
+        except:
+            # Try specific formats
+            for fmt in formats:
+                try:
+                    # Remove common prefixes
+                    clean_date = re.sub(r'^(Updated:|Published:|Posted:)\s*', '', date_str)
+                    parsed_date = datetime.strptime(clean_date, fmt)
+                    # Set timezone to IST
+                    parsed_date = self.timezone.localize(parsed_date)
+                    return parsed_date.strftime('%Y-%m-%d %I:%M %p IST')
+                except:
+                    continue
+        
+        return date_str  # Return original if parsing fails
 
     async def scrape_website(self, url: str) -> List[Dict]:
         """Main scraping function"""
@@ -118,16 +107,27 @@ class ScrapingEngine:
                     if link and not link.startswith('http'):
                         link = urljoin(config['base_url'], link)
 
-                    # Extract summary from article preview
+                    # Extract summary
                     summary = self.extract_text_from_selectors(article, config['selectors']['summary'])
-                    
-                    # If no summary in preview, fetch from article page
                     if not summary and link:
                         summary = await self.fetch_article_content(link)
 
-                    # Extract date
-                    date_elem = article.select_one(config['selectors']['date'])
-                    date = self.clean_text(date_elem.get_text()) if date_elem else ""
+                    # Extract and parse date
+                    date_str = None
+                    for date_selector in config['selectors']['date']:
+                        date_elem = article.select_one(date_selector)
+                        if date_elem:
+                            # Check for datetime attribute first
+                            date_str = (
+                                date_elem.get('datetime') or 
+                                date_elem.get('data-datetime') or 
+                                date_elem.get_text()
+                            )
+                            if date_str:
+                                break
+
+                    # Parse the date
+                    formatted_date = self.parse_date(date_str, config.get('date_formats', []))
 
                     # Only add articles with at least a title
                     if title:
@@ -135,7 +135,7 @@ class ScrapingEngine:
                             'title': title,
                             'link': link,
                             'summary': summary if summary else "Click to read more...",
-                            'date': date,
+                            'published_date': formatted_date,
                             'source': config['name']
                         }
                         

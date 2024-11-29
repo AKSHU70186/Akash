@@ -76,9 +76,10 @@ function displayResults(items) {
                     <span class="text-sm font-medium text-blue-600">
                         ${item.source}
                     </span>
-                    ${item.date ? `
+                    ${item.published_date ? `
                         <span class="text-sm text-gray-500">
-                            ${item.date}
+                            <i class="far fa-clock mr-1"></i>
+                            ${item.published_date}
                         </span>
                     ` : ''}
                 </div>
