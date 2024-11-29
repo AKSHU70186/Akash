@@ -1,11 +1,8 @@
 import csv
 import json
-import pandas as pd
 from typing import List, Dict, Any
-import xlsxwriter
 from fastapi import HTTPException
-import boto3
-from datetime import datetime
+import os
 
 class DataExporter:
     def __init__(self, data: List[Dict[str, Any]]):
@@ -13,9 +10,17 @@ class DataExporter:
 
     async def to_csv(self, filename: str) -> str:
         try:
-            df = pd.DataFrame(self.data)
             filepath = f"exports/{filename}.csv"
-            df.to_csv(filepath, index=False)
+            with open(filepath, 'w', newline='', encoding='utf-8') as f:
+                if not self.data:
+                    writer = csv.writer(f)
+                    writer.writerow(['No data available'])
+                else:
+                    # Get headers from first item
+                    headers = list(self.data[0].keys())
+                    writer = csv.DictWriter(f, fieldnames=headers)
+                    writer.writeheader()
+                    writer.writerows(self.data)
             return filepath
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error exporting to CSV: {str(e)}")
@@ -23,27 +28,21 @@ class DataExporter:
     async def to_json(self, filename: str) -> str:
         try:
             filepath = f"exports/{filename}.json"
-            with open(filepath, 'w') as f:
-                json.dump(self.data, f)
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(self.data, f, ensure_ascii=False, indent=2)
             return filepath
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error exporting to JSON: {str(e)}")
 
-    async def to_excel(self, filename: str) -> str:
+    async def to_txt(self, filename: str) -> str:
         try:
-            df = pd.DataFrame(self.data)
-            filepath = f"exports/{filename}.xlsx"
-            with pd.ExcelWriter(filepath, engine='xlsxwriter') as writer:
-                df.to_excel(writer, sheet_name='Data', index=False)
+            filepath = f"exports/{filename}.txt"
+            with open(filepath, 'w', encoding='utf-8') as f:
+                for item in self.data:
+                    f.write('---Article---\n')
+                    for key, value in item.items():
+                        f.write(f"{key}: {value}\n")
+                    f.write('\n')
             return filepath
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error exporting to Excel: {str(e)}")
-
-    async def upload_to_s3(self, filepath: str, bucket: str) -> str:
-        try:
-            s3 = boto3.client('s3')
-            filename = filepath.split('/')[-1]
-            s3.upload_file(filepath, bucket, filename)
-            return f"https://{bucket}.s3.amazonaws.com/{filename}"
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error uploading to S3: {str(e)}") 
+            raise HTTPException(status_code=500, detail=f"Error exporting to TXT: {str(e)}") 

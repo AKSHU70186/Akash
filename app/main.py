@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Form, File, UploadFile
+from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
@@ -18,6 +18,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files and templates
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
@@ -61,12 +63,12 @@ async def export_data(format: str):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"news_data_{timestamp}"
 
-        if format == "excel":
-            filepath = await exporter.to_excel(filename)
+        if format == "txt":
+            filepath = await exporter.to_txt(filename)
             return FileResponse(
                 filepath,
-                filename=f"{filename}.xlsx",
-                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                filename=f"{filename}.txt",
+                media_type="text/plain"
             )
         elif format == "csv":
             filepath = await exporter.to_csv(filename)
