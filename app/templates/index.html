@@ -23,11 +23,18 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="bg-white rounded-lg shadow-lg p-6">
             <form id="scrapeForm" class="space-y-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">URL to Scrape</label>
-                    <input type="url" name="url" required
-                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                        placeholder="https://example.com">
+                <div class="mb-4">
+                    <label for="url" class="block text-sm font-medium text-gray-700">Select Website or Enter URL</label>
+                    <select id="preset-urls" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="">Custom URL</option>
+                        <option value="https://indianexpress.com/section/education/">Indian Express Education</option>
+                        <option value="https://news.careers360.com/">Careers360</option>
+                        <option value="https://www.shiksha.com/news">Shiksha</option>
+                        <option value="https://www.ndtv.com/education">NDTV Education</option>
+                        <option value="https://timesofindia.indiatimes.com/education">Times of India Education</option>
+                    </select>
+                    <input type="url" id="url" name="url" placeholder="https://example.com" 
+                           class="mt-2 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border-gray-300 rounded-md">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Scraper Type</label>
