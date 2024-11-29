@@ -33,17 +33,41 @@ document.getElementById('scrapeForm').addEventListener('submit', async (e) => {
             // Clear previous results
             resultsContainer.innerHTML = '';
             
-            // Display news articles in a grid
             if (formData.get('scraper_type') === 'news' && data.data.scraped_data.length > 0) {
                 data.data.scraped_data.forEach(article => {
                     const articleElement = document.createElement('div');
-                    articleElement.className = 'bg-white rounded-lg shadow-md p-4';
+                    articleElement.className = 'bg-white rounded-lg shadow-md p-4 mb-4';
                     articleElement.innerHTML = `
-                        ${article.image_url ? `<img src="${article.image_url}" alt="${article.title}" class="w-full h-48 object-cover rounded-t-lg">` : ''}
-                        <h3 class="text-lg font-semibold mt-2">${article.title}</h3>
-                        ${article.excerpt ? `<p class="text-gray-600 mt-2">${article.excerpt}</p>` : ''}
-                        ${article.date ? `<p class="text-gray-500 text-sm mt-2">${article.date}</p>` : ''}
-                        ${article.link ? `<a href="${article.link}" target="_blank" class="text-blue-600 hover:text-blue-800 mt-2 inline-block">Read more</a>` : ''}
+                        <div class="flex flex-col md:flex-row">
+                            ${article.image_url ? `
+                                <div class="md:w-1/3 mb-4 md:mb-0 md:mr-4">
+                                    <img src="${article.image_url}" alt="${article.title}" 
+                                         class="w-full h-48 object-cover rounded-lg">
+                                </div>
+                            ` : ''}
+                            <div class="md:w-2/3">
+                                <h3 class="text-xl font-bold mb-2">
+                                    <a href="${article.link}" target="_blank" 
+                                       class="text-blue-600 hover:text-blue-800">
+                                        ${article.title}
+                                    </a>
+                                </h3>
+                                ${article.date ? `
+                                    <p class="text-gray-500 text-sm mb-2">
+                                        ${article.date}
+                                    </p>
+                                ` : ''}
+                                ${article.description ? `
+                                    <p class="text-gray-700 mb-4">
+                                        ${article.description}
+                                    </p>
+                                ` : ''}
+                                <a href="${article.link}" target="_blank" 
+                                   class="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                    Read More
+                                </a>
+                            </div>
+                        </div>
                     `;
                     resultsContainer.appendChild(articleElement);
                 });

@@ -46,19 +46,20 @@
                 </div>
             </form>
 
-            <div id="loading" class="mt-8 hidden">
-                <div class="flex items-center justify-center">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                    <span class="ml-2 text-gray-600">Scraping in progress...</span>
+            <div id="loading" class="hidden">
+                <div class="flex items-center justify-center p-4">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <span class="ml-3 text-gray-700">Scraping articles...</span>
                 </div>
             </div>
 
             <div id="results" class="mt-8 hidden">
-                <h2 class="text-lg font-medium text-gray-900 mb-4">Results</h2>
-                <div id="resultsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <!-- Results will be dynamically inserted here -->
+                <h2 class="text-xl font-bold mb-4">Scraped Articles</h2>
+                <div id="resultsContainer" class="space-y-4">
+                    <!-- Articles will be inserted here -->
                 </div>
-                <div class="bg-gray-50 rounded-md p-4 mt-4">
+                <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-2">Raw Data</h3>
                     <pre id="resultsJson" class="text-sm text-gray-800 overflow-auto"></pre>
                 </div>
             </div>
