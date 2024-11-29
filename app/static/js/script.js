@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (data.status === 'success') {
                 if (data.data.scraped_data.length === 0) {
-                    showError('No content found on this page');
+                    showError('No articles found on this page');
                 } else {
                     displayResults(data.data.scraped_data);
                 }
@@ -57,57 +57,54 @@ function resetUI() {
 }
 
 function showError(message) {
-    error.textContent = message;
+    error.querySelector('p').textContent = message;
     error.classList.remove('hidden');
+    error.classList.add('animate-fade-in');
 }
 
 function displayResults(items) {
-    contentList.innerHTML = ''; // Clear previous results
+    contentList.innerHTML = '';
     
-    if (items.length === 0) {
-        showError('No articles found');
-        return;
-    }
-
-    items.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'bg-white shadow rounded-lg p-4 mb-4';
+    items.forEach((item, index) => {
+        const article = document.createElement('div');
+        article.className = 'bg-white rounded-lg shadow-md overflow-hidden article-card animate-slide-in';
+        article.style.animationDelay = `${index * 0.1}s`;
         
-        let html = `
-            <h3 class="text-lg font-semibold mb-2">${item.title}</h3>
-            ${item.link ? `<a href="${item.link}" target="_blank" class="text-blue-500 hover:text-blue-700 mb-2 block">Read More</a>` : ''}
-            ${item.description ? `<p class="text-gray-600 mb-2">${item.description}</p>` : ''}
-            ${item.date ? `<p class="text-sm text-gray-500">${item.date}</p>` : ''}
+        article.innerHTML = `
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+                    ${item.title}
+                </h3>
+                ${item.description ? `
+                    <p class="text-gray-600 mb-4 line-clamp-3">
+                        ${item.description}
+                    </p>
+                ` : ''}
+                <div class="flex items-center justify-between">
+                    <a href="${item.link}" target="_blank" 
+                       class="text-blue-600 hover:text-blue-800 font-medium text-sm">
+                        Read More <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                    ${item.date ? `
+                        <span class="text-sm text-gray-500">
+                            <i class="far fa-calendar-alt mr-1"></i> ${item.date}
+                        </span>
+                    ` : ''}
+                </div>
+            </div>
         `;
         
-        div.innerHTML = html;
-        contentList.appendChild(div);
+        contentList.appendChild(article);
     });
 
     results.classList.remove('hidden');
+    results.classList.add('animate-fade-in');
     exportButtons.classList.remove('hidden');
+    exportButtons.classList.add('animate-fade-in');
 }
 
-function createContentElement(item) {
-    const div = document.createElement('div');
-    div.className = 'bg-white shadow rounded-lg p-4';
-    
-    let html = '';
-    
-    if (item.title) {
-        html += `<h3 class="text-lg font-semibold mb-2">${item.title}</h3>`;
-    }
-    
-    if (item.link) {
-        html += `<a href="${item.link}" target="_blank" class="text-blue-500 hover:text-blue-700 mb-2 block">View Original</a>`;
-    }
-    
-    if (item.description) {
-        html += `<p class="text-gray-600">${item.description}</p>`;
-    }
-    
-    div.innerHTML = html;
-    return div;
+function setUrl(url) {
+    document.getElementById('url').value = url;
 }
 
 async function exportData(format) {
@@ -128,8 +125,4 @@ async function exportData(format) {
         showError('Failed to export data');
         console.error(err);
     }
-}
-
-function setUrl(url) {
-    document.getElementById('url').value = url;
 } 
