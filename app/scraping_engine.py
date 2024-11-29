@@ -153,7 +153,8 @@ class ScrapingEngine:
                             'link': link,
                             'description': description,
                             'date': date,
-                            'source': config['name']
+                            'source': config['name'],
+                            'read_more': f"Read Full Article: {link}" if link else ""
                         }
                         
                         # Avoid duplicates
