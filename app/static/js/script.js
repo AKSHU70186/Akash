@@ -119,4 +119,49 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('scroll', revealOnScroll);
     // Initial check
     revealOnScroll();
+});
+
+document.getElementById('scrapeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const form = e.target;
+    const resultsDiv = document.getElementById('results');
+    const errorDiv = document.getElementById('error');
+    const resultsJson = document.getElementById('resultsJson');
+    
+    try {
+        const formData = new FormData(form);
+        
+        // Show loading state
+        form.querySelector('button').disabled = true;
+        form.querySelector('button').textContent = 'Scraping...';
+        
+        const response = await fetch('/scrape', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Show results
+            resultsDiv.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+            resultsJson.textContent = JSON.stringify(data, null, 2);
+        } else {
+            // Show error
+            resultsDiv.classList.add('hidden');
+            errorDiv.classList.remove('hidden');
+            document.getElementById('errorMessage').textContent = data.message || 'An error occurred';
+        }
+    } catch (error) {
+        // Show error
+        resultsDiv.classList.add('hidden');
+        errorDiv.classList.remove('hidden');
+        document.getElementById('errorMessage').textContent = error.message;
+    } finally {
+        // Reset button state
+        form.querySelector('button').disabled = false;
+        form.querySelector('button').textContent = 'Start Scraping';
+    }
 }); 
