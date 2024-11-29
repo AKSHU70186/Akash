@@ -1,39 +1,28 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 import logging
-from .api.routes import router as api_router
+from .scraping_engine import scraping_engine
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO)
 
-app = FastAPI(
-    title="Education News & Reviews Scraper",
-    description="API for scraping education news and Google Maps reviews",
-    version="1.0.0"
-)
-
-# CORS configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Initialize FastAPI app
+app = FastAPI(title="Education News Scraper")
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
-# Include API routes
-app.include_router(api_router, prefix="/api/v1")
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    """Render home page"""
+    return templates.TemplateResponse("index.html", {"request": request})
 
-# Health check endpoint
 @app.get("/health")
 async def health_check():
+    """Health check endpoint"""
     return {"status": "healthy"}
+
+# Your existing routes remain the same
