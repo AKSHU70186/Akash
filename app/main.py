@@ -44,8 +44,6 @@ async def scrape(url: str = Form(...), scraper_type: str = Form(...)):
         
         if scraper_type == "google_maps":
             data = await scraping_engine.scrape_google_maps(config)
-        elif scraper_type == "e_commerce":
-            data = await scraping_engine.scrape_custom(config)
         elif scraper_type == "news":
             data = await scraping_engine.scrape_news(config)
         else:
@@ -83,10 +81,12 @@ def get_selectors_for_type(scraper_type: str) -> dict:
             'images': 'img.product-image'
         },
         "news": {
-            'article': 'article',
-            'title': 'h2.title',
-            'content': 'div.content',
-            'date': 'time.published'
+            'article': 'div.article-list article',
+            'title': 'h2.title a',
+            'content': 'p.excerpt',
+            'date': 'time.published',
+            'link': 'h2.title a',
+            'image': 'img.wp-post-image'
         }
     }
     return selectors.get(scraper_type, {}) 
