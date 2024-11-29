@@ -67,29 +67,39 @@ function displayResults(items) {
     
     items.forEach((item, index) => {
         const article = document.createElement('div');
-        article.className = 'bg-white rounded-lg shadow-md overflow-hidden article-card animate-slide-in';
+        article.className = 'bg-white rounded-lg shadow-md p-6 mb-4 article-card animate-slide-in';
         article.style.animationDelay = `${index * 0.1}s`;
         
         article.innerHTML = `
-            <div class="p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-                    ${item.title}
-                </h3>
-                ${item.description ? `
-                    <p class="text-gray-600 mb-4 line-clamp-3">
-                        ${item.description}
-                    </p>
-                ` : ''}
+            <div class="space-y-4">
                 <div class="flex items-center justify-between">
-                    <a href="${item.link}" target="_blank" 
-                       class="text-blue-600 hover:text-blue-800 font-medium text-sm">
-                        Read More <i class="fas fa-arrow-right ml-1"></i>
-                    </a>
+                    <span class="text-sm font-medium text-blue-600">
+                        ${item.source}
+                    </span>
                     ${item.date ? `
                         <span class="text-sm text-gray-500">
-                            <i class="far fa-calendar-alt mr-1"></i> ${item.date}
+                            ${item.date}
                         </span>
                     ` : ''}
+                </div>
+                
+                <h3 class="text-xl font-semibold text-gray-900">
+                    ${item.title}
+                </h3>
+                
+                <p class="text-gray-600">
+                    ${item.summary}
+                </p>
+                
+                <div class="pt-4 border-t border-gray-200">
+                    <a href="${item.link}" 
+                       target="_blank" 
+                       class="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium">
+                        Read Full Article 
+                        <svg class="ml-2 w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
                 </div>
             </div>
         `;
@@ -98,9 +108,7 @@ function displayResults(items) {
     });
 
     results.classList.remove('hidden');
-    results.classList.add('animate-fade-in');
     exportButtons.classList.remove('hidden');
-    exportButtons.classList.add('animate-fade-in');
 }
 
 function setUrl(url) {

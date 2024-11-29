@@ -13,8 +13,6 @@ class ScrapingEngine:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.5',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
         }
 
         self.site_configs = {
@@ -26,47 +24,30 @@ class ScrapingEngine:
                     'article_wrapper': 'div.article-list article, div.nation div[class*="article"]',
                     'title': 'h2.title a, h3 a',
                     'link': 'h2.title a, h3 a',
-                    'description': 'p.preview',
-                    'date': 'time, span.date'
-                }
-            },
-            'careers360.com': {
-                'name': 'Careers360',
-                'base_url': 'https://news.careers360.com',
-                'education_url': 'https://news.careers360.com',
-                'selectors': {
-                    'article_wrapper': 'div.newsListBlock, article.news_article',
-                    'title': 'h3.headingText a, h2.title a',
-                    'link': 'h3.headingText a, h2.title a',
-                    'description': 'p.content, div.content',
-                    'date': 'span.date'
-                }
-            },
-            'shiksha.com': {
-                'name': 'Shiksha',
-                'base_url': 'https://www.shiksha.com',
-                'education_url': 'https://www.shiksha.com/news',
-                'selectors': {
-                    'article_wrapper': 'div.news-tuple, div.nws-tuple',
-                    'title': 'h2.news-title a, div.tuple-title a',
-                    'link': 'h2.news-title a, div.tuple-title a',
-                    'description': 'div.news-snippet, div.tuple-desc',
-                    'date': 'div.date-tuple'
-                }
-            },
-            'timesofindia.indiatimes.com': {
-                'name': 'Times of India',
-                'base_url': 'https://timesofindia.indiatimes.com',
-                'education_url': 'https://timesofindia.indiatimes.com/education',
-                'selectors': {
-                    'article_wrapper': 'div.list5.clearfix article, div.education-story',
-                    'title': 'span.w_tle a, h3 a',
-                    'link': 'span.w_tle a, h3 a',
-                    'description': 'p.desc',
-                    'date': 'span.date'
+                    'description': ['p.preview', 'div.preview', 'p:not([class])', 'div.synopsis'],
+                    'date': 'time, span.date',
+                    'summary': ['p.preview', 'div.preview', 'p:not([class])', 'div.synopsis']
                 }
             }
         }
+
+    async def fetch_article_content(self, url: str) -> Optional[str]:
+        """Fetch and extract full article content"""
+        try:
+            html = await self.fetch_with_retry(url)
+            if html:
+                soup = BeautifulSoup(html, 'html.parser')
+                # Find article content
+                content = soup.select_one('div.article-content, div.full-details')
+                if content:
+                    # Extract first few paragraphs
+                    paragraphs = content.select('p')
+                    summary = ' '.join([p.get_text().strip() for p in paragraphs[:2]])
+                    return self.clean_text(summary)
+            return None
+        except Exception as e:
+            logging.error(f"Error fetching article content: {str(e)}")
+            return None
 
     async def fetch_with_retry(self, url: str, max_retries: int = 3) -> Optional[str]:
         """Fetch URL content with retry mechanism"""
@@ -76,15 +57,6 @@ class ScrapingEngine:
                     async with session.get(url, headers=self.headers, timeout=30) as response:
                         if response.status == 200:
                             return await response.text()
-                        elif response.status == 403:
-                            # Rotate User-Agent
-                            user_agents = [
-                                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124 Safari/537.36',
-                                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1.15',
-                                'Mozilla/5.0 (X11; Linux x86_64) Firefox/89.0'
-                            ]
-                            self.headers['User-Agent'] = user_agents[attempt % len(user_agents)]
-                            continue
             except Exception as e:
                 logging.error(f"Attempt {attempt + 1} failed for {url}: {str(e)}")
                 if attempt == max_retries - 1:
@@ -106,6 +78,14 @@ class ScrapingEngine:
         # Remove special characters
         text = re.sub(r'[\n\r\t]', '', text)
         return text
+
+    def extract_text_from_selectors(self, article: BeautifulSoup, selectors: List[str]) -> Optional[str]:
+        """Try multiple selectors to extract text"""
+        for selector in selectors:
+            element = article.select_one(selector)
+            if element:
+                return self.clean_text(element.get_text())
+        return None
 
     async def scrape_website(self, url: str) -> List[Dict]:
         """Main scraping function"""
@@ -138,9 +118,12 @@ class ScrapingEngine:
                     if link and not link.startswith('http'):
                         link = urljoin(config['base_url'], link)
 
-                    # Extract description
-                    desc_elem = article.select_one(config['selectors']['description'])
-                    description = self.clean_text(desc_elem.get_text()) if desc_elem else ""
+                    # Extract summary from article preview
+                    summary = self.extract_text_from_selectors(article, config['selectors']['summary'])
+                    
+                    # If no summary in preview, fetch from article page
+                    if not summary and link:
+                        summary = await self.fetch_article_content(link)
 
                     # Extract date
                     date_elem = article.select_one(config['selectors']['date'])
@@ -151,10 +134,9 @@ class ScrapingEngine:
                         article_data = {
                             'title': title,
                             'link': link,
-                            'description': description,
+                            'summary': summary if summary else "Click to read more...",
                             'date': date,
-                            'source': config['name'],
-                            'read_more': f"Read Full Article: {link}" if link else ""
+                            'source': config['name']
                         }
                         
                         # Avoid duplicates
