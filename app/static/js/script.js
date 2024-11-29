@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const results = document.getElementById('results');
     const error = document.getElementById('error');
     const articlesList = document.getElementById('articlesList');
+    const exportButtons = document.getElementById('exportButtons');
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -19,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loading.classList.remove('hidden');
         results.classList.add('hidden');
         error.classList.add('hidden');
+        exportButtons.classList.add('hidden');
         articlesList.innerHTML = '';
 
         try {
@@ -32,8 +34,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await response.json();
 
-            if (data.status === 'success') {
-                if (data.data.scraped_data.length === 0) {
+            if (data.status === 'success' || data.status === 'warning') {
+                if (!data.data.scraped_data || data.data.scraped_data.length === 0) {
                     error.textContent = 'No articles found';
                     error.classList.remove('hidden');
                 } else {
@@ -42,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         articlesList.appendChild(articleElement);
                     });
                     results.classList.remove('hidden');
-                    document.getElementById('exportButtons').classList.remove('hidden');
+                    exportButtons.classList.remove('hidden');
                 }
             } else {
                 throw new Error(data.message || 'Failed to scrape data');
@@ -58,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function createArticleElement(article) {
     const div = document.createElement('div');
-    div.className = 'bg-white p-6 rounded-lg shadow-md';
+    div.className = 'bg-white p-6 rounded-lg shadow-md mb-4';
     
     div.innerHTML = `
         <h3 class="text-xl font-bold mb-2">

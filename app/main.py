@@ -33,9 +33,18 @@ async def home(request: Request):
 @app.post("/scrape")
 async def scrape(request: Request, url: str = Form(...)):
     try:
-        config = {'target_url': url}
-        data = await scraping_engine.scrape_news(config)
+        data = await scraping_engine.scrape_news({'target_url': url})
         
+        if not data:
+            return JSONResponse({
+                "status": "warning",
+                "message": "No articles found",
+                "data": {
+                    "url": url,
+                    "scraped_data": []
+                }
+            })
+
         # Store the scraped data for export
         request.app.state.last_scraped_data = data
         
