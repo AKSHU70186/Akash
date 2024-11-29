@@ -12,4 +12,6 @@ services:
         value: 3.10.0
       - key: GOOGLE_CHROME_BIN
         value: /usr/bin/chromium-browser
+      - key: CHROME_DRIVER_PATH
+        value: /usr/bin/chromedriver
     staticPublishPath: ./app/static 
