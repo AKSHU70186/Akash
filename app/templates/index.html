@@ -1,93 +1,103 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Scraping Platform</title>
-    <link href="{{ url_for('static', path='/css/styles.css') }}" rel="stylesheet">
+    <title>Education News Scraper</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-50">
-    <nav class="bg-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex">
-                    <div class="flex-shrink-0 flex items-center">
-                        <h1 class="text-xl font-bold text-gray-800">Web Scraping Platform</h1>
-                    </div>
-                </div>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">Education News Scraper</h1>
+        
+        <form id="scrapeForm" class="mb-8">
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2">Select Website:</label>
+                <select id="urlSelect" class="w-full p-2 border rounded">
+                    <option value="">Choose a website...</option>
+                    <option value="https://news.careers360.com/">Careers360</option>
+                    <option value="https://indianexpress.com/section/education/">Indian Express Education</option>
+                    <option value="https://www.shiksha.com/news">Shiksha News</option>
+                </select>
             </div>
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Scrape News
+            </button>
+        </form>
+
+        <div id="loading" class="hidden">
+            <p class="text-gray-600">Loading...</p>
         </div>
-    </nav>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="bg-white rounded-lg shadow-lg p-6">
-            <form id="scrapeForm" class="space-y-6">
-                <div class="mb-4">
-                    <label for="url" class="block text-sm font-medium text-gray-700">Select Website or Enter URL</label>
-                    <select id="preset-urls" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                        <option value="">Custom URL</option>
-                        <option value="https://indianexpress.com/section/education/">Indian Express Education</option>
-                        <option value="https://news.careers360.com/">Careers360</option>
-                        <option value="https://www.shiksha.com/news">Shiksha</option>
-                        <option value="https://www.ndtv.com/education">NDTV Education</option>
-                        <option value="https://timesofindia.indiatimes.com/education">Times of India Education</option>
-                    </select>
-                    <input type="url" id="url" name="url" placeholder="https://example.com" 
-                           class="mt-2 block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border-gray-300 rounded-md">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Scraper Type</label>
-                    <select name="scraper_type" required
-                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="google_maps">Google Maps</option>
-                        <option value="e_commerce">E-Commerce</option>
-                        <option value="news">News</option>
-                    </select>
-                </div>
-                <div>
-                    <button type="submit"
-                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Start Scraping
-                    </button>
-                </div>
-            </form>
-
-            <div id="loading" class="hidden">
-                <div class="flex items-center justify-center p-4">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                    <span class="ml-3 text-gray-700">Scraping articles...</span>
-                </div>
-            </div>
-
-            <div id="results" class="mt-8 hidden">
-                <h2 class="text-xl font-bold mb-4">Scraped Articles</h2>
-                <div id="resultsContainer" class="space-y-4">
-                    <!-- Articles will be inserted here -->
-                </div>
-                <div class="mt-8 p-4 bg-gray-50 rounded-lg">
-                    <h3 class="text-lg font-semibold mb-2">Raw Data</h3>
-                    <pre id="resultsJson" class="text-sm text-gray-800 overflow-auto"></pre>
-                </div>
-            </div>
-
-            <div id="error" class="mt-8 hidden">
-                <div class="bg-red-50 border-l-4 border-red-400 p-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm text-red-700" id="errorMessage"></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div id="results" class="hidden">
+            <h2 class="text-2xl font-bold mb-4">Results</h2>
+            <div id="articlesList" class="space-y-4"></div>
         </div>
+
+        <div id="error" class="hidden text-red-500"></div>
     </div>
 
-    <script src="{{ url_for('static', path='/js/script.js') }}"></script>
+    <script>
+        document.getElementById('scrapeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const url = document.getElementById('urlSelect').value;
+            if (!url) {
+                alert('Please select a website');
+                return;
+            }
+
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            const error = document.getElementById('error');
+            const articlesList = document.getElementById('articlesList');
+
+            loading.classList.remove('hidden');
+            results.classList.add('hidden');
+            error.classList.add('hidden');
+
+            try {
+                const formData = new FormData();
+                formData.append('url', url);
+
+                const response = await fetch('/scrape', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    articlesList.innerHTML = '';
+                    
+                    data.data.scraped_data.forEach(article => {
+                        const articleDiv = document.createElement('div');
+                        articleDiv.className = 'bg-white p-4 rounded shadow';
+                        articleDiv.innerHTML = `
+                            <h3 class="text-xl font-bold mb-2">
+                                <a href="${article.link}" target="_blank" class="text-blue-600 hover:underline">
+                                    ${article.title}
+                                </a>
+                            </h3>
+                            <p class="text-gray-600 mb-2">${article.description || ''}</p>
+                            <div class="text-sm text-gray-500">
+                                <span>${article.source}</span>
+                                ${article.date ? `<span class="ml-2">${article.date}</span>` : ''}
+                            </div>
+                        `;
+                        articlesList.appendChild(articleDiv);
+                    });
+
+                    results.classList.remove('hidden');
+                } else {
+                    error.textContent = data.message;
+                    error.classList.remove('hidden');
+                }
+            } catch (err) {
+                error.textContent = 'Failed to fetch data';
+                error.classList.remove('hidden');
+            } finally {
+                loading.classList.add('hidden');
+            }
+        });
+    </script>
 </body>
 </html> 
