@@ -3,25 +3,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const loading = document.getElementById('loading');
     const results = document.getElementById('results');
     const error = document.getElementById('error');
-    const articlesList = document.getElementById('articlesList');
+    const contentList = document.getElementById('contentList');
     const exportButtons = document.getElementById('exportButtons');
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const url = document.getElementById('urlSelect').value;
+        const url = document.getElementById('url').value;
         if (!url) {
-            error.textContent = 'Please select a website';
-            error.classList.remove('hidden');
+            showError('Please enter a valid URL');
             return;
         }
 
         // Reset UI
+        resetUI();
         loading.classList.remove('hidden');
-        results.classList.add('hidden');
-        error.classList.add('hidden');
-        exportButtons.classList.add('hidden');
-        articlesList.innerHTML = '';
 
         try {
             const formData = new FormData();
@@ -34,74 +30,84 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await response.json();
 
-            if (data.status === 'success' || data.status === 'warning') {
-                if (!data.data.scraped_data || data.data.scraped_data.length === 0) {
-                    error.textContent = 'No articles found';
-                    error.classList.remove('hidden');
+            if (data.status === 'success') {
+                if (data.data.scraped_data.length === 0) {
+                    showError('No content found on this page');
                 } else {
-                    data.data.scraped_data.forEach(article => {
-                        const articleElement = createArticleElement(article);
-                        articlesList.appendChild(articleElement);
-                    });
-                    results.classList.remove('hidden');
-                    exportButtons.classList.remove('hidden');
+                    displayResults(data.data.scraped_data);
                 }
             } else {
-                throw new Error(data.message || 'Failed to scrape data');
+                showError(data.message || 'Failed to scrape content');
             }
         } catch (err) {
-            error.textContent = err.message || 'An error occurred while scraping';
-            error.classList.remove('hidden');
+            showError('An error occurred while scraping');
+            console.error(err);
         } finally {
             loading.classList.add('hidden');
         }
     });
 });
 
-function createArticleElement(article) {
+function resetUI() {
+    loading.classList.add('hidden');
+    results.classList.add('hidden');
+    error.classList.add('hidden');
+    contentList.innerHTML = '';
+    exportButtons.classList.add('hidden');
+}
+
+function showError(message) {
+    error.textContent = message;
+    error.classList.remove('hidden');
+}
+
+function displayResults(items) {
+    items.forEach(item => {
+        const element = createContentElement(item);
+        contentList.appendChild(element);
+    });
+    results.classList.remove('hidden');
+    exportButtons.classList.remove('hidden');
+}
+
+function createContentElement(item) {
     const div = document.createElement('div');
-    div.className = 'bg-white p-6 rounded-lg shadow-md mb-4';
+    div.className = 'bg-white shadow rounded-lg p-4';
     
-    div.innerHTML = `
-        <h3 class="text-xl font-bold mb-2">
-            <a href="${article.link}" target="_blank" class="text-blue-600 hover:text-blue-800">
-                ${article.title}
-            </a>
-        </h3>
-        ${article.description ? `
-            <p class="text-gray-600 mb-4">${article.description}</p>
-        ` : ''}
-        <div class="flex justify-between items-center text-sm text-gray-500">
-            <span>${article.source}</span>
-            ${article.date ? `<span>${article.date}</span>` : ''}
-        </div>
-    `;
+    let html = '';
     
+    if (item.title) {
+        html += `<h3 class="text-lg font-semibold mb-2">${item.title}</h3>`;
+    }
+    
+    if (item.link) {
+        html += `<a href="${item.link}" target="_blank" class="text-blue-500 hover:text-blue-700 mb-2 block">View Original</a>`;
+    }
+    
+    if (item.description) {
+        html += `<p class="text-gray-600">${item.description}</p>`;
+    }
+    
+    div.innerHTML = html;
     return div;
 }
 
 async function exportData(format) {
     try {
-        const response = await fetch(`/export/${format}`, {
-            method: 'GET',
-        });
-
-        if (!response.ok) {
-            throw new Error('Export failed');
-        }
-
+        const response = await fetch(`/export/${format}`);
+        if (!response.ok) throw new Error('Export failed');
+        
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `news_data.${format}`;
+        a.download = `scraped_data.${format}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         a.remove();
     } catch (err) {
-        console.error('Export error:', err);
-        error.textContent = 'Failed to export data';
-        error.classList.remove('hidden');
+        showError('Failed to export data');
+        console.error(err);
     }
 } 

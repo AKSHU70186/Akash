@@ -10,7 +10,7 @@ from datetime import datetime
 
 app = FastAPI()
 
-# CORS and Static files configuration
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,11 +19,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files and templates
+# Static files and templates
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
-# Create exports directory if it doesn't exist
+# Create exports directory
 os.makedirs("exports", exist_ok=True)
 
 @app.get("/", response_class=HTMLResponse)
@@ -33,19 +33,25 @@ async def home(request: Request):
 @app.post("/scrape")
 async def scrape(request: Request, url: str = Form(...)):
     try:
-        data = await scraping_engine.scrape_news({'target_url': url})
+        # Get website type from URL
+        website_type = scraping_engine.get_website_type(url)
+        if not website_type:
+            return JSONResponse({
+                "status": "error",
+                "message": "Unsupported website URL"
+            }, status_code=400)
+
+        # Scrape the website
+        data = await scraping_engine.scrape_website(url, website_type)
         
         if not data:
             return JSONResponse({
                 "status": "warning",
-                "message": "No articles found",
-                "data": {
-                    "url": url,
-                    "scraped_data": []
-                }
+                "message": "No content found",
+                "data": {"url": url, "scraped_data": []}
             })
 
-        # Store the scraped data for export
+        # Store data for export
         request.app.state.last_scraped_data = data
         
         return JSONResponse({
@@ -55,6 +61,7 @@ async def scrape(request: Request, url: str = Form(...)):
                 "scraped_data": data
             }
         })
+
     except Exception as e:
         return JSONResponse({
             "status": "error",
@@ -70,29 +77,14 @@ async def export_data(format: str):
         data = app.state.last_scraped_data
         exporter = DataExporter(data)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"news_data_{timestamp}"
+        filename = f"scraped_data_{timestamp}"
 
-        if format == "txt":
-            filepath = await exporter.to_txt(filename)
-            return FileResponse(
-                filepath,
-                filename=f"{filename}.txt",
-                media_type="text/plain"
-            )
-        elif format == "csv":
+        if format == "csv":
             filepath = await exporter.to_csv(filename)
-            return FileResponse(
-                filepath,
-                filename=f"{filename}.csv",
-                media_type="text/csv"
-            )
+            return FileResponse(filepath, filename=f"{filename}.csv", media_type="text/csv")
         elif format == "json":
             filepath = await exporter.to_json(filename)
-            return FileResponse(
-                filepath,
-                filename=f"{filename}.json",
-                media_type="application/json"
-            )
+            return FileResponse(filepath, filename=f"{filename}.json", media_type="application/json")
         else:
             raise HTTPException(status_code=400, detail="Unsupported export format")
 

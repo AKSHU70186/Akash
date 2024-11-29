@@ -3,73 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Education News Scraper</title>
+    <title>Web Content Scraper</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="{{ url_for('static', path='/css/styles.css') }}" rel="stylesheet">
 </head>
 <body class="bg-gray-100">
-    <nav class="bg-white shadow-lg">
-        <div class="max-w-6xl mx-auto px-4">
-            <div class="flex justify-between items-center h-16">
-                <div class="text-xl font-bold text-blue-600">
-                    Education News Scraper
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <main class="container mx-auto px-4 py-8">
-        <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
-            <h1 class="text-2xl font-bold mb-6">Scrape Education News</h1>
-            
-            <form id="scrapeForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Select News Source
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">Web Content Scraper</h1>
+        
+        <div class="max-w-2xl mx-auto">
+            <form id="scrapeForm" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="url">
+                        Website URL
                     </label>
-                    <select id="urlSelect" name="url" class="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">Choose a website...</option>
-                        <option value="https://news.careers360.com/">Careers360</option>
-                        <option value="https://indianexpress.com/section/education/">Indian Express Education</option>
-                        <option value="https://www.shiksha.com/news">Shiksha News</option>
-                        <option value="https://www.ndtv.com/education">NDTV Education</option>
-                        <option value="https://timesofindia.indiatimes.com/education">Times of India Education</option>
-                    </select>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                           id="url" type="url" placeholder="Enter website URL" required>
                 </div>
-
-                <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200">
-                    Scrape News
-                </button>
+                <div class="flex items-center justify-between">
+                    <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                            type="submit">
+                        Scrape Content
+                    </button>
+                </div>
             </form>
 
-            <div id="loading" class="hidden mt-6">
-                <div class="flex items-center justify-center">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <span class="ml-2 text-gray-600">Scraping news...</span>
+            <div id="loading" class="hidden">
+                <div class="flex justify-center items-center">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <span class="ml-2">Scraping content...</span>
                 </div>
             </div>
 
-            <div id="error" class="hidden mt-6 p-4 bg-red-100 text-red-700 rounded-md"></div>
+            <div id="error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"></div>
 
-            <div id="results" class="hidden mt-6">
-                <h2 class="text-xl font-semibold mb-4">Results</h2>
-                <div id="articlesList" class="space-y-6"></div>
+            <div id="results" class="hidden">
+                <h2 class="text-xl font-bold mb-4">Results</h2>
+                <div id="contentList" class="space-y-4"></div>
             </div>
 
-            <div id="exportButtons" class="hidden mt-6 space-x-4">
-                <h3 class="text-lg font-semibold mb-3">Export Results:</h3>
-                <button onclick="exportData('txt')" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-200">
-                    Export to TXT
+            <div id="exportButtons" class="hidden mt-4 space-x-4">
+                <button onclick="exportData('csv')" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                    Export CSV
                 </button>
-                <button onclick="exportData('csv')" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200">
-                    Export to CSV
-                </button>
-                <button onclick="exportData('json')" class="bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition duration-200">
-                    Export to JSON
+                <button onclick="exportData('json')" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
+                    Export JSON
                 </button>
             </div>
         </div>
-    </main>
+    </div>
 
     <script src="{{ url_for('static', path='/js/script.js') }}"></script>
 </body>
