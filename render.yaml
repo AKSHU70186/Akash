@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: webscraper
+    name: webs
     env: python
     buildCommand: |
       python -m pip install --upgrade pip
@@ -9,5 +9,3 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.0
-      - key: PORT
-        value: 10000

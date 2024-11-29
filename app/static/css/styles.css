@@ -236,4 +236,27 @@ body {
     .hero-content h1 {
         font-size: 2.5rem;
     }
+}
+
+/* Custom styles beyond Tailwind */
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Additional custom styles */
+.article-link {
+    transition: color 0.2s ease;
+}
+
+.article-link:hover {
+    color: #2563eb;
 } 

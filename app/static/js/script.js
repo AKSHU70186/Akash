@@ -1,106 +1,105 @@
-document.getElementById('preset-urls').addEventListener('change', function(e) {
-    const urlInput = document.getElementById('url');
-    urlInput.value = e.target.value;
-});
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('scrapeForm');
+    const loading = document.getElementById('loading');
+    const results = document.getElementById('results');
+    const error = document.getElementById('error');
+    const articlesList = document.getElementById('articlesList');
 
-document.getElementById('scrapeForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const form = e.target;
-    const loadingDiv = document.getElementById('loading');
-    const resultsDiv = document.getElementById('results');
-    const errorDiv = document.getElementById('error');
-    const resultsJson = document.getElementById('resultsJson');
-    const resultsContainer = document.getElementById('resultsContainer');
-    const submitButton = form.querySelector('button');
-    
-    try {
-        // Show loading state
-        submitButton.disabled = true;
-        loadingDiv.classList.remove('hidden');
-        resultsDiv.classList.add('hidden');
-        errorDiv.classList.add('hidden');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
         
-        const formData = new FormData(form);
-        
-        const response = await fetch('/scrape', {
-            method: 'POST',
-            body: formData
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            // Show results
-            resultsDiv.classList.remove('hidden');
-            resultsJson.textContent = JSON.stringify(data, null, 2);
-            
-            // Clear previous results
-            resultsContainer.innerHTML = '';
-            
-            if (formData.get('scraper_type') === 'news' && data.data.scraped_data.length > 0) {
-                data.data.scraped_data.forEach(article => {
-                    displayArticle(article, resultsContainer);
-                });
-            }
-        } else {
-            // Show error
-            errorDiv.classList.remove('hidden');
-            document.getElementById('errorMessage').textContent = data.message || 'An error occurred';
+        const url = document.getElementById('urlSelect').value;
+        if (!url) {
+            error.textContent = 'Please select a website';
+            error.classList.remove('hidden');
+            return;
         }
-    } catch (error) {
-        // Show error
-        errorDiv.classList.remove('hidden');
-        document.getElementById('errorMessage').textContent = 
-            'Failed to connect to the server. Please try again.';
-    } finally {
-        // Reset states
-        loadingDiv.classList.add('hidden');
-        submitButton.disabled = false;
-    }
+
+        // Reset UI
+        loading.classList.remove('hidden');
+        results.classList.add('hidden');
+        error.classList.add('hidden');
+        articlesList.innerHTML = '';
+
+        try {
+            const formData = new FormData();
+            formData.append('url', url);
+
+            const response = await fetch('/scrape', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                if (data.data.scraped_data.length === 0) {
+                    error.textContent = 'No articles found';
+                    error.classList.remove('hidden');
+                } else {
+                    data.data.scraped_data.forEach(article => {
+                        const articleElement = createArticleElement(article);
+                        articlesList.appendChild(articleElement);
+                    });
+                    results.classList.remove('hidden');
+                    document.getElementById('exportButtons').classList.remove('hidden');
+                }
+            } else {
+                throw new Error(data.message || 'Failed to scrape data');
+            }
+        } catch (err) {
+            error.textContent = err.message || 'An error occurred while scraping';
+            error.classList.remove('hidden');
+        } finally {
+            loading.classList.add('hidden');
+        }
+    });
 });
 
-function displayArticle(article, container) {
-    const articleElement = document.createElement('div');
-    articleElement.className = 'bg-white rounded-lg shadow-md p-4 mb-4';
+function createArticleElement(article) {
+    const div = document.createElement('div');
+    div.className = 'bg-white p-6 rounded-lg shadow-md';
     
-    articleElement.innerHTML = `
-        <div class="flex flex-col md:flex-row">
-            ${article.image_url ? `
-                <div class="md:w-1/3 mb-4 md:mb-0 md:mr-4">
-                    <img src="${article.image_url}" alt="${article.title}" 
-                         class="w-full h-48 object-cover rounded-lg">
-                </div>
-            ` : ''}
-            <div class="md:${article.image_url ? 'w-2/3' : 'w-full'}">
-                <div class="flex justify-between items-start mb-2">
-                    <h3 class="text-xl font-bold">
-                        <a href="${article.link}" target="_blank" 
-                           class="text-blue-600 hover:text-blue-800">
-                            ${article.title}
-                        </a>
-                    </h3>
-                    <span class="text-sm text-gray-500 ml-2">
-                        ${article.source}
-                    </span>
-                </div>
-                ${article.date ? `
-                    <p class="text-gray-500 text-sm mb-2">
-                        ${article.date}
-                    </p>
-                ` : ''}
-                ${article.description ? `
-                    <p class="text-gray-700 mb-4">
-                        ${article.description}
-                    </p>
-                ` : ''}
-                <a href="${article.link}" target="_blank" 
-                   class="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                    Read More
-                </a>
-            </div>
+    div.innerHTML = `
+        <h3 class="text-xl font-bold mb-2">
+            <a href="${article.link}" target="_blank" class="text-blue-600 hover:text-blue-800">
+                ${article.title}
+            </a>
+        </h3>
+        ${article.description ? `
+            <p class="text-gray-600 mb-4">${article.description}</p>
+        ` : ''}
+        <div class="flex justify-between items-center text-sm text-gray-500">
+            <span>${article.source}</span>
+            ${article.date ? `<span>${article.date}</span>` : ''}
         </div>
     `;
     
-    container.appendChild(articleElement);
+    return div;
+}
+
+async function exportData(format) {
+    try {
+        const response = await fetch(`/export/${format}`, {
+            method: 'GET',
+        });
+
+        if (!response.ok) {
+            throw new Error('Export failed');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `news_data.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+    } catch (err) {
+        console.error('Export error:', err);
+        error.textContent = 'Failed to export data';
+        error.classList.remove('hidden');
+    }
 } 
