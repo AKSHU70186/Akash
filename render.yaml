@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: webscraper
+    env: python
+    buildCommand: |
+      pip install -r requirements.txt
+      mkdir -p app/static/css app/static/js
+      apt-get update && apt-get install -y chromium-browser chromium-chromedriver
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: GOOGLE_CHROME_BIN
+        value: /usr/bin/chromium-browser
+    staticPublishPath: ./app/static 

@@ -5,6 +5,8 @@ import asyncio
 import aiohttp
 import logging
 from datetime import datetime
+import os
+from fastapi import HTTPException
 
 class ScrapingEngine:
     def __init__(self):
@@ -12,29 +14,32 @@ class ScrapingEngine:
         self.chrome_options.add_argument('--headless')
         self.chrome_options.add_argument('--no-sandbox')
         self.chrome_options.add_argument('--disable-dev-shm-usage')
+        self.chrome_options.binary_location = os.getenv("GOOGLE_CHROME_BIN")
+        self.chrome_options.add_argument("--disable-gpu")
 
     async def scrape_google_maps(self, config):
-        driver = webdriver.Chrome(options=self.chrome_options)
+        driver = None
         try:
+            driver = webdriver.Chrome(options=self.chrome_options)
             driver.get(config['target_url'])
-            # Wait for dynamic content
-            await asyncio.sleep(2)
+            await asyncio.sleep(5)  # Wait for dynamic content
             
-            results = []
-            # Extract business information
-            elements = driver.find_elements_by_class_name('business-card')
-            for element in elements:
-                business = {
-                    'name': element.find_element_by_class_name('business-name').text,
-                    'address': element.find_element_by_class_name('address').text,
-                    'rating': element.find_element_by_class_name('rating').text,
-                    'reviews': element.find_element_by_class_name('reviews').text,
-                }
-                results.append(business)
+            data = {}
+            for field, selector in config['selectors'].items():
+                try:
+                    element = driver.find_element_by_css_selector(selector)
+                    data[field] = element.text
+                except:
+                    data[field] = None
             
-            return results
+            return data
+            
+        except Exception as e:
+            logging.error(f"Error scraping Google Maps: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
         finally:
-            driver.quit()
+            if driver:
+                driver.quit()
 
     async def scrape_news(self, config):
         async with aiohttp.ClientSession() as session:
