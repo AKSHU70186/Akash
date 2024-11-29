@@ -62,10 +62,28 @@ function showError(message) {
 }
 
 function displayResults(items) {
+    contentList.innerHTML = ''; // Clear previous results
+    
+    if (items.length === 0) {
+        showError('No articles found');
+        return;
+    }
+
     items.forEach(item => {
-        const element = createContentElement(item);
-        contentList.appendChild(element);
+        const div = document.createElement('div');
+        div.className = 'bg-white shadow rounded-lg p-4 mb-4';
+        
+        let html = `
+            <h3 class="text-lg font-semibold mb-2">${item.title}</h3>
+            ${item.link ? `<a href="${item.link}" target="_blank" class="text-blue-500 hover:text-blue-700 mb-2 block">Read More</a>` : ''}
+            ${item.description ? `<p class="text-gray-600 mb-2">${item.description}</p>` : ''}
+            ${item.date ? `<p class="text-sm text-gray-500">${item.date}</p>` : ''}
+        `;
+        
+        div.innerHTML = html;
+        contentList.appendChild(div);
     });
+
     results.classList.remove('hidden');
     exportButtons.classList.remove('hidden');
 }
@@ -110,4 +128,8 @@ async function exportData(format) {
         showError('Failed to export data');
         console.error(err);
     }
+}
+
+function setUrl(url) {
+    document.getElementById('url').value = url;
 } 

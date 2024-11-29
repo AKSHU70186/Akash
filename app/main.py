@@ -33,21 +33,13 @@ async def home(request: Request):
 @app.post("/scrape")
 async def scrape(request: Request, url: str = Form(...)):
     try:
-        # Get website type from URL
-        website_type = scraping_engine.get_website_type(url)
-        if not website_type:
-            return JSONResponse({
-                "status": "error",
-                "message": "Unsupported website URL"
-            }, status_code=400)
-
         # Scrape the website
-        data = await scraping_engine.scrape_website(url, website_type)
+        data = await scraping_engine.scrape_website(url)
         
         if not data:
             return JSONResponse({
                 "status": "warning",
-                "message": "No content found",
+                "message": "No articles found",
                 "data": {"url": url, "scraped_data": []}
             })
 
