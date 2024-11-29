@@ -135,3 +135,70 @@ async function exportData(format) {
         console.error(err);
     }
 }
+
+async function scrapeWebsite() {
+    const urlInput = document.getElementById('urlInput');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const errorMessage = document.getElementById('errorMessage');
+    const results = document.getElementById('results');
+    const contentList = document.getElementById('contentList');
+
+    try {
+        // Show loading spinner
+        loadingSpinner.classList.remove('hidden');
+        errorMessage.classList.add('hidden');
+        results.classList.add('hidden');
+
+        // Get URL from input
+        const url = urlInput.value.trim();
+        if (!url) {
+            throw new Error('Please enter a valid URL');
+        }
+
+        // Make API call
+        const response = await fetch(`/scrape?url=${encodeURIComponent(url)}`);
+        const data = await response.json();
+
+        if (data.status === 'error') {
+            throw new Error(data.message);
+        }
+
+        if (data.status === 'warning') {
+            errorMessage.textContent = data.message;
+            errorMessage.classList.remove('hidden');
+            return;
+        }
+
+        // Display results
+        contentList.innerHTML = '';
+        data.data.forEach(item => {
+            const article = document.createElement('div');
+            article.className = 'mb-4 p-4 bg-white rounded shadow';
+            article.innerHTML = `
+                <h3 class="text-xl font-bold mb-2">${item.title}</h3>
+                <p class="text-gray-600 mb-2">${item.summary}</p>
+                <div class="text-sm text-gray-500 mb-2">
+                    ${item.published_date ? `Published: ${item.published_date}` : ''}
+                </div>
+                <div class="text-sm text-gray-500 mb-2">Source: ${item.source}</div>
+                <a href="${item.link}" target="_blank" 
+                   class="text-blue-600 hover:text-blue-800">Read More</a>
+            `;
+            contentList.appendChild(article);
+        });
+
+        results.classList.remove('hidden');
+
+    } catch (error) {
+        errorMessage.textContent = error.message;
+        errorMessage.classList.remove('hidden');
+    } finally {
+        loadingSpinner.classList.add('hidden');
+    }
+}
+
+// Add event listener to the form
+document.getElementById('scrapeForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    scrapeWebsite();
+});
